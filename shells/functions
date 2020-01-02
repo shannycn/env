@@ -1,3 +1,102 @@
+#----------------
+# a few fun ones
+#----------------
+function repeat()
+{
+    local i max
+    max=$1; shift;
+    for ((i=1; i <= max ; i++)); do  # --> C-like syntax
+    eval "$@";
+    done
+}
+
+function ii()  # get current host related info  # kind of works on mac.  different interface.  dynamic-able?
+{
+    echo -e "\nYou are logged onto ${RED}$HOST"
+    echo -e "\nAdditionnal information:$NC " ; uname -a
+    echo -e "\n${RED}Users logged on:$NC " ; w -h
+    echo -e "\n${RED}Current date :$NC " ; date
+    echo -e "\n${RED}Machine stats :$NC " ; uptime
+    echo -e "\n${RED}Disk space :$NC " ; df
+    echo -e "\n${RED}Memory stats :$NC " ; free
+    my_ip 2>&- ;
+    echo -e "\n${RED}Local IP Address :$NC" ; echo ${MY_IP:-"Not connected"}
+    echo
+}
+
+function tz()  # gojo - tries to unarchive anything thrown at it  # not tested on mac
+{
+    tar cvzf $1.tar.gz $1 ;
+}
+    
+function ux()  # gojo - tries to unarchive anything thrown at it  # not tested on mac
+{
+    ##### Probably done more robustly with file(1) but not as easily
+    local FILENAME="${1}"
+    local EXT="${1##*.}"
+    local ONLYNAME="${1%%.$EXT}"
+    local EXT2="${ONLYNAME##*.}"
+    if [ $EXT2 != "" ]; then
+        EXT2="$EXT2.$EXT"
+    fi
+#    local FILEEXTENSION=`echo ${1} | cut -d. -f2-`
+    case "$EXT2" in
+        tar.gz)
+            tar xzvf "$FILENAME"
+            return;;
+        tar.bz2)
+            tar xjvf "$FILENAME"
+            return;;
+        tar.bz)
+            tar xjvf "$FILENAME"
+            return;;
+        tar.Z)
+            tar xZvf "$FILENAME"
+            return;;
+    esac
+    
+    case "$EXT" in
+        tar)
+            tar xvf "$FILENAME";;
+        tgz)
+            tar xzvf "$FILENAME";;
+        gz)
+            gunzip "$FILENAME";;
+        tbz)
+            tar xjvf "$FILENAME";;
+        tbz2)
+            tar xjvf "$FILENAME";;
+        bz2)
+            bunzip2 "$FILENAME";;
+        Z)
+            uncompress "$FILENAME";;
+        zip)
+            unzip "$FILENAME";;
+        rar)
+            unrar x "$FILENAME";;
+    esac
+}
+
+function private()
+{
+    find $HOME -type d -exec chmod 700 {} \;
+    find $HOME -type f -exec chmod 600 {} \;
+    find $HOME/bin -type f -exec chmod +x {} \;
+    public
+}
+
+function public()
+{
+    if [ -d $HOME/public_html ]; then
+        chown -R $USER:www-data $HOME/public_html
+        chmod 755 $HOME/public_html
+        find $HOME/public_html/ -type d -exec chmod 775 {} \;
+        find $HOME/public_html/ -type f -exec chmod 664 {} \;
+        chmod 755 $HOME
+    fi
+}
+
+
 # Functions to aid git workflow
 function ga(){
     git-add $1
@@ -77,3 +176,157 @@ function parse_git_dirty {
 function parse_git_branch {
 git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e "s/* \(.*\)/[\1$(parse_git_dirty)]/"
 }
+
+
+#=======================================================================
+#
+# PROGRAMMABLE COMPLETION - ONLY SINCE BASH-2.04
+# Most are taken from the bash 2.05 documentation and from Ian McDonalds
+# 'Bash completion' package
+#  (http://www.caliban.org/bash/index.shtml#completion)
+# You will in fact need bash-2.05a for some features
+#
+#=======================================================================
+
+if [ "${BASH_VERSION%.*}" \< "2.05" ]; then
+   echo "You will need to upgrade to version 2.05 \
+for programmable completion"
+   return
+fi
+
+shopt -s extglob        # necessary
+set +o nounset          # otherwise some completions will fail
+
+complete -A hostname   rsh rcp telnet rlogin r ftp ping disk
+complete -A export     printenv
+complete -A variable   export local readonly unset
+complete -A enabled    builtin
+complete -A alias      alias unalias
+complete -A function   function
+complete -A user       su mail finger
+
+complete -A helptopic  help     # currently same as builtins
+complete -A shopt      shopt
+complete -A stopped -P '%' bg
+complete -A job -P '%'     fg jobs disown
+
+complete -A directory  mkdir rmdir
+complete -A directory   -o default cd
+
+# Compression
+complete -f -o default -X '*.+(zip|ZIP)'  zip
+complete -f -o default -X '!*.+(zip|ZIP)' unzip
+complete -f -o default -X '*.+(z|Z)'      compress
+complete -f -o default -X '!*.+(z|Z)'     uncompress
+complete -f -o default -X '*.+(gz|GZ)'    gzip
+complete -f -o default -X '!*.+(gz|GZ)'   gunzip
+complete -f -o default -X '*.+(bz2|BZ2)'  bzip2
+complete -f -o default -X '!*.+(bz2|BZ2)' bunzip2
+# Postscript,pdf,dvi.....
+complete -f -o default -X '!*.ps'  gs ghostview ps2pdf ps2ascii
+complete -f -o default -X '!*.dvi' dvips dvipdf xdvi dviselect dvitype
+complete -f -o default -X '!*.pdf' acroread pdf2ps
+complete -f -o default -X '!*.+(pdf|ps)' gv
+complete -f -o default -X '!*.texi*' makeinfo texi2dvi texi2html texi2pdf
+complete -f -o default -X '!*.tex' tex latex slitex
+complete -f -o default -X '!*.lyx' lyx
+complete -f -o default -X '!*.+(htm*|HTM*)' lynx html2ps
+# Multimedia
+complete -f -o default -X '!*.+(jp*g|gif|xpm|png|bmp)' xv gimp
+complete -f -o default -X '!*.+(mp3|MP3)' mpg123 mpg321
+complete -f -o default -X '!*.+(ogg|OGG)' ogg123
+
+
+
+complete -f -o default -X '!*.pl'  perl perl5
+
+
+#-----------------------------------
+# Process/system related functions:
+#-----------------------------------
+
+function myps() { ps $@ -u $USER -o pid,%cpu,%mem,bsdtime,command ; }  # works
+function pp() { myps f | awk '!/awk/ && $0~var' var=${1:-".*"} ; }  # doesn't work on mac. iilegal option -f
+
+#-----------------------------------
+# File & strings related functions:
+#-----------------------------------
+
+# Find a file with a pattern in name:
+function fn() { find . 2>/dev/null -name '*'$1'*' ; }  # find a file  # works
+# Find a file with pattern $1 in name and Execute $2 on it:
+function fe() { find . 2>/dev/null -name '*'$1'*' -exec $2 {} \; ; }  # find a file and run $2 on it  # works
+
+# Find string in source code
+alias fs="find ./ -type f \( -name \*.c -or -name \*.cpp -or -name \*.h \) 2>/dev/null | xargs grep -a -n --colour"
+# Find string in Text
+alias ft="find . -type f 2>/dev/null | perl -e 'while(<>){s/\n//;if(!-B){print \$_.\"\n\"}}' | xargs grep -a -n --colour"
+# find pattern in a set of filesand highlight them:
+function fstr()
+{
+    OPTIND=1
+    local case=""
+    local usage="fstr: find string in files.
+Usage: fstr [-i] \"pattern\" [\"filename pattern\"] "
+    while getopts :it opt
+    do
+        case "$opt" in
+        i) case="-i " ;;
+        *) echo "$usage"; return;;
+        esac
+    done
+    shift $(( $OPTIND - 1 ))
+    if [ "$#" -lt 1 ]; then
+        echo "$usage"
+        return;
+    fi
+    local SMSO=$(tput smso)
+    local RMSO=$(tput rmso)
+    find . -type f -name "${2:-*}" -print0 |
+    xargs -0 grep -sn ${case} "$1" 2>&- | \
+    sed "s/$1/${SMSO}\0${RMSO}/gI" | more
+}
+# move filenames to lowercase  # not working on mac
+function lowercase()
+{
+    for file ; do
+        filename=${file##*/}
+        case "$filename" in
+            */*) dirname==${file%/*} ;;
+            *) dirname=.;;
+        esac
+        nf=$(echo $filename | tr A-Z a-z)
+        newname="${dirname}/${nf}"
+        if [ "$nf" != "$filename" ]; then
+            mv "$file" "$newname"
+            echo "lowercase: $file --> $newname"
+        else
+            echo "lowercase: $file not changed."
+        fi
+    done
+}
+
+
+
+# Find a branch
+function fb()
+{ clt find $PWD -version "version(.../$1/LATEST)" -print ; }
+function fl()
+{ clt find $PWD -version "version($1)" -print ; }
+
+# Find merge from version and print
+function fm()
+{ clt findmerge $PWD -fver .../$1/LATEST -print ; }
+function fml()
+{ clt findmerge $PWD -fver $1 -print ; }
+# Find merge from version and do merge
+function fmm()
+{ clt findmerge $PWD -fver .../$1/LATEST -merge -nc; }
+function fmml()
+{ clt findmerge $PWD -fver $1 -merge -nc; }
+
+# Make lable for branch
+function mklb()
+{ clt find . -branch "brtype($1)" -exec 'echo $CLEARCASE_PN' |xargs -i cleartool mklabel -replace $2 {} ; }
+
+

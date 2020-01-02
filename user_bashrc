@@ -18,4 +18,3 @@ source ~/.env/shells/prompt   # Fancy prompt with time and current working dir
 source ~/.env/shells/git      # Conveniences - Display current branch etc
 
 # Welcome message
-echo -ne "It's "; date '+%A, %B %-d %Y'

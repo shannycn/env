@@ -1,3 +1,25 @@
+export LANG=en_US
+export LANGUAGE=en_US
+export LC_ALL=en_US.UTF-8
+
+#export LANG=zh_CN.GB18030
+#export LANGUAGE=zh_CN
+#export LC_ALL=zh_CN.GB18030
+
+export TERM=xterm
+export TMOUT=0
+
+#export VIEW
+#--- custom variables here - you shouldn't need to change anything above here ---#
+PROMPT="power"          # sets prompt style.  choices: power or anything else to disable
+WTERM="xterm"           # could also be rxvt
+INTERFACE="venet0:0"    # sadly, not always eth0, and very annoying to autodetect
+NEVER_USE_X="Y"         # override helpful autosetting of use_x when x-server detected
+#--- end custom variables, you shouldn't need to change anything below here --#
+
+HOST=$(hostname)        # for host info function
+OS=$(uname)             # for resolving pesky os differing switches
+
 ############## HISTORY OPTIONS ################
 
 # Don't put duplicate lines or lines starting with space in the history.
@@ -57,3 +79,27 @@ export PATH=$PATH:/usr/games/
 
 
 
+# Bash settings
+#umask 007
+ulimit -S -c 0      # Don't want any coredumps
+#set -o notify       # notify when jobs running in background terminate
+set -o noclobber    # prevents catting over file
+#set -o ignoreeof   # can't c-d out of shell
+set -o nounset      # attempt to use undefined variable outputs error message and forces exit
+#set -o xtrace      # useful for debuging
+
+# Enable options:
+shopt -s cdspell         # auto fixes cd / spelling mistakes
+shopt -s cdable_vars
+shopt -s checkhash
+shopt -s checkwinsize
+shopt -s cmdhist
+shopt -u mailwarn
+shopt -s sourcepath
+shopt -s no_empty_cmd_completion  # bash>=2.04 only
+shopt -s histappend histreedit histverify
+shopt -s extglob    # necessary for programmable completion
+
+# Disable options:
+shopt -u mailwarn
+unset MAILCHECK       # I don't want my shell to warn me of incoming mail

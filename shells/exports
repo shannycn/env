@@ -20,3 +20,7 @@ export http_proxy=
 export https_proxy=
 export ftp_proxy=
 
+
+export TIMEFORMAT=$'\nreal %3R\tuser %3U\tsys %3S\tpcpu %P\n'
+export HISTIGNORE="&:bg:fg:ll:h:ls:cd:rm *:clt pwd:clt pwv:cc:ce:pwd"
+export HOSTFILE=$HOME/.hosts    # Put a list of remote hosts in ~/.hosts

@@ -258,7 +258,7 @@ function fn() { find . 2>/dev/null -name '*'$1'*' ; }  # find a file  # works
 function fe() { find . 2>/dev/null -name '*'$1'*' -exec $2 {} \; ; }  # find a file and run $2 on it  # works
 
 # Find string in source code
-alias fs="find ./ -type f \( -name \*.c -or -name \*.cpp -or -name \*.h \) 2>/dev/null | xargs grep -a -n --colour"
+alias fs="find ./ -type f \( -name \*.c -or -name \*.cpp -or -name \*.h -or -name \*.go \) 2>/dev/null | xargs grep -a -n --colour"
 # Find string in Text
 alias ft="find . -type f 2>/dev/null | perl -e 'while(<>){s/\n//;if(!-B){print \$_.\"\n\"}}' | xargs grep -a -n --colour"
 # find pattern in a set of filesand highlight them:

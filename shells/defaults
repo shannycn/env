@@ -1,6 +1,7 @@
 export LANG=en_US
 export LANGUAGE=en_US
 export LC_ALL=en_US.UTF-8
+export LESSCHARSET=utf-8
 
 #export LANG=zh_CN.GB18030
 #export LANGUAGE=zh_CN

@@ -1,5 +1,9 @@
 alias cdvn="cd /home/lijshao/go/src/venus"
+alias cdwr="cd /www/wwwroot/"
+alias cdvt="cd /www/wwwroot/venus_test"
 alias gr="go run main.go"
+
+#alias iptb="/sbin/iptables -I INPUT -p tcp --dport 8088 -j ACCEPT"
 
 stty stop undef
 stty start undef
@@ -134,7 +138,7 @@ alias ch7='chmod 777'
 # tailoring 'less'
 alias more='less'
 export PAGER=less
-export LESSCHARSET='latin1'
+#export LESSCHARSET='latin1'
 export LESSOPEN='|/usr/bin/lesspipe.sh %s 2>&-'
        # Use this if lesspipe.sh exists.
 export LESS='-i -N -w  -z-4 -g -e -M -X -F -R -P%t?f%f \

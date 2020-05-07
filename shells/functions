@@ -1,6 +1,14 @@
 #----------------
 # a few fun ones
 #----------------
+function openport()
+{
+    sudo firewall-cmd --zone=public --add-port=$1/tcp --permanent ;
+    sudo systemctl restart firewalld.service ;
+    sudo firewall-cmd --reload ;
+}
+
+
 function repeat()
 {
     local i max

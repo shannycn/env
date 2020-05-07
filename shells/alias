@@ -1,4 +1,4 @@
-alias cdvn="cd /home/lijshao/go/src/venus"
+alias cdvn="cd /home/lijshao/go/src/gitee.com/ryxtech/venus"
 alias cdwr="cd /www/wwwroot/"
 alias cdvt="cd /www/wwwroot/venus_test"
 alias gr="go run main.go"

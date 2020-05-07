@@ -1,0 +1,786 @@
+# .bashrc
+#===============================================================
+#
+# Last modified: 3:54 PM 8/8/2007 by Shao Shanny
+#
+#===============================================================
+
+# User specific aliases and functions
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+    . /etc/bashrc
+fi
+
+export LANG=en_US
+export LANGUAGE=en_US
+export LC_ALL=en_US.UTF-8
+
+#export LANG=zh_CN.GB18030
+#export LANGUAGE=zh_CN
+#export LC_ALL=zh_CN.GB18030
+
+export TERM=xterm
+export TMOUT=0
+
+#export VIEW
+#--- custom variables here - you shouldn't need to change anything above here ---#
+PROMPT="power"          # sets prompt style.  choices: power or anything else to disable
+WTERM="xterm"           # could also be rxvt
+INTERFACE="venet0:0"    # sadly, not always eth0, and very annoying to autodetect
+NEVER_USE_X="Y"         # override helpful autosetting of use_x when x-server detected
+#--- end custom variables, you shouldn't need to change anything below here --#
+
+HOST=$(hostname)        # for host info function
+OS=$(uname)             # for resolving pesky os differing switches
+
+#  Black       0;30     Dark Gray     1;30
+#  Blue        0;34     Light Blue    1;34
+#  Green       0;32     Light Green   1;32
+#  Cyan        0;36     Light Cyan    1;36
+#  Red         0;31     Light Red     1;31
+#  Purple      0;35     Light Purple  1;35
+#  Brown       0;33     Yellow        1;33
+#  Light Gray  0;37     White         1;37
+
+red='\e[0;31m'
+RED='\e[1;31m'
+blue='\e[0;34m'
+BLUE='\e[1;34m'
+cyan='\e[0;36m'
+CYAN='\e[1;36m'
+green='\e[0;32m'
+GREEN='\e[1;32m'
+purple='\e[0;35m'
+PURPLE='\e[1;35m'
+yellow='\e[0;33m'
+YELLOW='\e[1;33m'
+NC='\e[0m' #no color
+
+# X DISPLAY settings
+if [ $OS = "Linux" ]; then
+   function get_xserver ()
+   {
+       case $TERM in
+           xterm | xterm-color | linux )
+               XSERVER=$(who am i | awk '{print $NF}' | tr -d ')''(' )
+               XSERVER=${XSERVER%%:*}
+               ;;
+       esac
+   }
+   if [ -z ${DISPLAY:=""} ]; then
+       get_xserver
+       if [[ -z ${XSERVER}  || ${XSERVER} == $(hostname) || ${XSERVER} == "unix" ]]; then
+           export DISPLAY=":0.0"
+       else
+          export DISPLAY=${XSERVER}:0.0
+       fi
+   fi
+elif [ $OS = 'Darwin' ]; then
+   if [[ -z $DISPLAY ]]; then
+       disp_no=($( ps -ax | grep X11.app | grep -v grep | awk '{print $9}' ))
+       if [[ -n $disp_no ]];then
+           export DISPLAY=${disp_no}.0
+       else
+           export DISPLAY=''
+           echo "No running X-Server"
+       fi
+   fi
+fi
+if [[ ! -z $DISPLAY ]]; then
+    if [ $NEVER_USE_X != 'Y' ]; then
+        USE_X="Y"
+        echo "Using X"
+    else
+        echo "usage of X prohibited"
+    fi
+    if [ $SHLVL = 1 ]; then
+        rm -f $HOME/.display
+        echo $DISPLAY > $HOME/.display
+        echo "DISPLAY has been set to $DISPLAY"
+    elif [ $SHLVL -gt 1 ]; then
+        if [ -e $HOME/.display ]; then
+            DISPLAY_FIX=$(cat $HOME/.display)
+            if [ $DISPLAY != $DISPLAY_FIX ]; then
+#                export DISPLAY=$DISPLAY_FIX
+                echo "screen/DISPLAY mismatch detected.  DISPLAY has been adjusted to $DISPLAY"
+            fi
+        fi
+    fi
+else
+    USE_X="N"
+    echo "Not using X"
+fi
+if [ $NEVER_USE_X = "Y" ]; then
+    USE_X="N"
+fi
+
+
+# Make $HOME comfy
+if [ ! -d "${HOME}/bin" ]; then
+    mkdir ${HOME}/bin
+    chmod 700 ${HOME}/bin
+    echo "${HOME}/bin was missing.  I recreated it for you."
+fi
+if [ ! -d "${HOME}/Documents" ]; then
+    if ! [  -d "${HOME}/data" ]; then
+        mkdir ${HOME}/data
+        chmod 700 ${HOME}/data
+        echo "${HOME}/data was missing.  I recreated it for you."
+    fi
+fi
+if [ ! -d "${HOME}/tmp" ]; then
+    mkdir ${HOME}/tmp
+    chmod 700 ${HOME}/tmp
+    echo "${HOME}/tmp was missing.  I recreated it for you."
+fi
+
+# Bash settings
+#umask 007
+ulimit -S -c 0      # Don't want any coredumps
+#set -o notify       # notify when jobs running in background terminate
+set -o noclobber    # prevents catting over file
+#set -o ignoreeof   # can't c-d out of shell
+set -o nounset      # attempt to use undefined variable outputs error message and forces exit
+#set -o xtrace      # useful for debuging
+
+# Enable options:
+shopt -s cdspell         # auto fixes cd / spelling mistakes
+shopt -s cdable_vars
+shopt -s checkhash
+shopt -s checkwinsize
+shopt -s cmdhist
+shopt -u mailwarn
+shopt -s sourcepath
+shopt -s no_empty_cmd_completion  # bash>=2.04 only
+shopt -s histappend histreedit histverify
+shopt -s extglob    # necessary for programmable completion
+
+# Disable options:
+shopt -u mailwarn
+unset MAILCHECK       # I don't want my shell to warn me of incoming mail
+
+export TIMEFORMAT=$'\nreal %3R\tuser %3U\tsys %3S\tpcpu %P\n'
+export HISTIGNORE="&:bg:fg:ll:h:ls:cd:rm *:clt pwd:clt pwv:cc:ce:pwd"
+export HOSTFILE=$HOME/.hosts    # Put a list of remote hosts in ~/.hosts
+
+
+stty stop undef
+stty start undef
+
+# Aliases
+if [ -f dircolors ]; then
+    eval `dircolors -b`
+fi
+if [ $OS = "Linux" ]; then
+#    alias ls='ls --color=auto -h'
+    alias ls='ls --color=auto'
+elif [ $OS = "Darwin" ]; then
+    alias ls='ls -G'
+fi
+
+
+#---------------
+# Shell Prompt
+#---------------
+
+if [[ "${DISPLAY#$HOST}" != ":0.0" &&  "${DISPLAY}" != ":0" ]]; then  
+    HILIT=${red}   # remote machine: prompt will be partly red
+else
+    HILIT=${cyan}  # local machine: prompt will be partly cyan
+fi
+
+function set_xtitle()
+{
+    if [ $TERM == "xterm" ]; then
+#        echo -ne "\033]0;${USER}@${HOSTNAME}: ${PWD}\007"
+#        echo -ne "\033]0;${HOSTNAME}(${USER}): ${PWD}\007"
+        if [ ${USER} == "rvkx64" ]; then
+            echo -ne "\033]0;${HOSTNAME:0:10} | ${CLEARCASE_ROOT##*/} | ${PWD}\007"
+        else
+            echo -ne "\033]0;${USER} | ${HOSTNAME} | ${CLEARCASE_ROOT##*/} | ${PWD}\007"
+        fi
+    fi
+}
+
+#PS1 function
+function host_load()
+{
+    THRESHOLD_LOAD=50
+    COLOUR_LOW=$green
+    COLOUR_HIGH=$red
+
+    if [ $OS = "Linux" ]; then
+        ONE=$(uptime | sed -e "s/.*load average: \(.*\...\),\(.*\...\),\(.*\...\)/\1/" -e "s/ //g")
+    fi
+    if [ $OS = "Darwin" ]; then
+        ONE=$(uptime | sed -e "s/.*load averages: \(.*\...\)\(.*\...\)\(.*\...\)/\1/" -e "s/ //g")
+    fi
+    ONEHUNDRED=$(echo -e "scale=0 \n $ONE/0.01 \nquit \n" | bc)
+    if [ $ONEHUNDRED -gt $THRESHOLD_LOAD ]
+        then
+            HOST_COLOR=$COLOUR_HIGH
+        else
+            HOST_COLOR=$COLOUR_LOW 
+    fi
+}
+function power_prompt()
+{
+    host_load
+    set_xtitle
+    if [ "$UID" -eq 0 ]; then
+#        PS1="[\[${HOST_COLOR}\]\t\[${NC}\][\[${red}\]\u@\h:\w]\$\[${NC}\] "
+        PS1="\[${HOST_COLOR}\]\t\[${NC}\] \[${purple}\]\w\[${NC}\]> "
+    else
+#        PS1="[\[${HOST_COLOR}\]\t\[${NC}\]][\[${cyan}\]\u\[${NC}\]@\[${red}\]\h\[${NC}\]:\w]\$ "
+        PS1="\[${HOST_COLOR}\]\t\[${NC}\] \[${yellow}\]\w\[${NC}\]> "
+    fi
+}
+if [ $PROMPT = "power" ]; then
+    PROMPT_COMMAND=power_prompt
+else
+    if [ "$UID" -eq 0 ]; then
+        PS1="[\t][\[${red}\]\u@\h:\w]\$\[${NC}\] "
+    else
+        PS1="[\t][\[${cyan}\]\u\[${NC}\]@\[${red}\]\h\[${NC}\]:\w]\$ "
+    fi
+fi
+
+
+#===============================================================
+#
+# ALIASES AND FUNCTIONS
+#
+# Arguably, some functions defined here are quite big
+# (ie 'lowercase') but my workstation has 512Meg of RAM, so ...
+# If you want to make this file smaller, these functions can
+# be converted into scripts.
+#
+# Many functions were taken (almost) straight from the bash-2.04
+# examples.
+#
+#===============================================================
+
+#-------------------
+# Personnal Aliases
+#-------------------
+
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+# -> Prevents accidentally clobbering files.
+alias mkdir='mkdir -p'
+
+alias c="clear"
+alias h='history'
+alias j='jobs -l'
+alias r='rlogin'
+alias m="less"
+alias which='type -all'
+alias ..='cd ..'
+alias path='echo -e ${PATH//:/\\n}'
+#alias print='/usr/bin/lp -o nobanner -d $LPDEST'
+      # Assumes LPDEST is defined
+#alias pjet='enscript -h -G -fCourier9 -d $LPDEST'
+      # Pretty-print using enscript
+#alias background='xv -root -quit -max -rmode 5'
+      # Put a picture in the background
+alias du='du -kh'
+alias df='df -kTh'
+
+alias grep="grep -a -n --colour"
+alias pg="ps -ef | grep"
+alias xg="xargs grep -a -n --colour"
+
+
+#alias pcd="cd -"
+#alias tz="tar cvzf"
+#alias tx="tar xvzf"
+alias vi="vim"
+alias vim="vim -X"
+
+alias sr="screen -d -RR"
+alias sx="screen -x"
+
+# The 'ls' family (this assumes you use the GNU ls)
+alias l.="ls -d .*"
+alias ll="ls -Al"
+alias la='ls -Al'               # show hidden files
+#alias ls='ls -h --color'       # add colors for filetype recognition
+alias lx='ls -lXB'              # sort by extension
+alias lk='ls -lSr'              # sort by size
+alias lc='ls -lcr'              # sort by change time  
+alias lu='ls -lur'              # sort by access time   
+alias lr='ls -lR'               # recursive ls
+alias lt='ls -ltr'              # sort by date
+alias lm='ls -al |more'         # pipe through 'more'
+alias tree='tree -C'          # nice alternative to 'ls'
+
+
+# change all files to 777:
+alias ch7='chmod 777'
+
+# tailoring 'less'
+alias more='less'
+export PAGER=less
+export LESSCHARSET='latin1'
+export LESSOPEN='|/usr/bin/lesspipe.sh %s 2>&-'
+       # Use this if lesspipe.sh exists.
+export LESS='-i -N -w  -z-4 -g -e -M -X -F -R -P%t?f%f \
+:stdin .?pb%pb\%:?lbLine %lb:?bbByte %bb:-...'
+
+# spelling typos - highly personnal :-)
+alias xs='cd'
+alias vf='cd'
+alias moer='more'
+alias moew='more'
+alias kk='ll'
+
+#----------------
+# a few fun ones
+#----------------
+function repeat()
+{
+    local i max
+    max=$1; shift;
+    for ((i=1; i <= max ; i++)); do  # --> C-like syntax
+    eval "$@";
+    done
+}
+
+function ii()  # get current host related info  # kind of works on mac.  different interface.  dynamic-able?
+{
+    echo -e "\nYou are logged onto ${RED}$HOST"
+    echo -e "\nAdditionnal information:$NC " ; uname -a
+    echo -e "\n${RED}Users logged on:$NC " ; w -h
+    echo -e "\n${RED}Current date :$NC " ; date
+    echo -e "\n${RED}Machine stats :$NC " ; uptime
+    echo -e "\n${RED}Disk space :$NC " ; df
+    echo -e "\n${RED}Memory stats :$NC " ; free
+    my_ip 2>&- ;
+    echo -e "\n${RED}Local IP Address :$NC" ; echo ${MY_IP:-"Not connected"}
+    echo
+}
+
+function tz()  # gojo - tries to unarchive anything thrown at it  # not tested on mac
+{
+    tar cvzf $1.tar.gz $1 ;
+}
+    
+function ux()  # gojo - tries to unarchive anything thrown at it  # not tested on mac
+{
+    ##### Probably done more robustly with file(1) but not as easily
+    local FILENAME="${1}"
+    local EXT="${1##*.}"
+    local ONLYNAME="${1%%.$EXT}"
+    local EXT2="${ONLYNAME##*.}"
+    if [ $EXT2 != "" ]; then
+        EXT2="$EXT2.$EXT"
+    fi
+#    local FILEEXTENSION=`echo ${1} | cut -d. -f2-`
+    case "$EXT2" in
+        tar.gz)
+            tar xzvf "$FILENAME"
+            return;;
+        tar.bz2)
+            tar xjvf "$FILENAME"
+            return;;
+        tar.bz)
+            tar xjvf "$FILENAME"
+            return;;
+        tar.Z)
+            tar xZvf "$FILENAME"
+            return;;
+    esac
+    
+    case "$EXT" in
+        tar)
+            tar xvf "$FILENAME";;
+        tgz)
+            tar xzvf "$FILENAME";;
+        gz)
+            gunzip "$FILENAME";;
+        tbz)
+            tar xjvf "$FILENAME";;
+        tbz2)
+            tar xjvf "$FILENAME";;
+        bz2)
+            bunzip2 "$FILENAME";;
+        Z)
+            uncompress "$FILENAME";;
+        zip)
+            unzip "$FILENAME";;
+        rar)
+            unrar x "$FILENAME";;
+    esac
+}
+
+function private()
+{
+    find $HOME -type d -exec chmod 700 {} \;
+    find $HOME -type f -exec chmod 600 {} \;
+    find $HOME/bin -type f -exec chmod +x {} \;
+    public
+}
+
+function public()
+{
+    if [ -d $HOME/public_html ]; then
+        chown -R $USER:www-data $HOME/public_html
+        chmod 755 $HOME/public_html
+        find $HOME/public_html/ -type d -exec chmod 775 {} \;
+        find $HOME/public_html/ -type f -exec chmod 664 {} \;
+        chmod 755 $HOME
+    fi
+}
+
+
+#=======================================================================
+#
+# PROGRAMMABLE COMPLETION - ONLY SINCE BASH-2.04
+# Most are taken from the bash 2.05 documentation and from Ian McDonalds
+# 'Bash completion' package
+#  (http://www.caliban.org/bash/index.shtml#completion)
+# You will in fact need bash-2.05a for some features
+#
+#=======================================================================
+
+if [ "${BASH_VERSION%.*}" \< "2.05" ]; then
+   echo "You will need to upgrade to version 2.05 \
+for programmable completion"
+   return
+fi
+
+shopt -s extglob        # necessary
+set +o nounset          # otherwise some completions will fail
+
+complete -A hostname   rsh rcp telnet rlogin r ftp ping disk
+complete -A export     printenv
+complete -A variable   export local readonly unset
+complete -A enabled    builtin
+complete -A alias      alias unalias
+complete -A function   function
+complete -A user       su mail finger
+
+complete -A helptopic  help     # currently same as builtins
+complete -A shopt      shopt
+complete -A stopped -P '%' bg
+complete -A job -P '%'     fg jobs disown
+
+complete -A directory  mkdir rmdir
+complete -A directory   -o default cd
+
+# Compression
+complete -f -o default -X '*.+(zip|ZIP)'  zip
+complete -f -o default -X '!*.+(zip|ZIP)' unzip
+complete -f -o default -X '*.+(z|Z)'      compress
+complete -f -o default -X '!*.+(z|Z)'     uncompress
+complete -f -o default -X '*.+(gz|GZ)'    gzip
+complete -f -o default -X '!*.+(gz|GZ)'   gunzip
+complete -f -o default -X '*.+(bz2|BZ2)'  bzip2
+complete -f -o default -X '!*.+(bz2|BZ2)' bunzip2
+# Postscript,pdf,dvi.....
+complete -f -o default -X '!*.ps'  gs ghostview ps2pdf ps2ascii
+complete -f -o default -X '!*.dvi' dvips dvipdf xdvi dviselect dvitype
+complete -f -o default -X '!*.pdf' acroread pdf2ps
+complete -f -o default -X '!*.+(pdf|ps)' gv
+complete -f -o default -X '!*.texi*' makeinfo texi2dvi texi2html texi2pdf
+complete -f -o default -X '!*.tex' tex latex slitex
+complete -f -o default -X '!*.lyx' lyx
+complete -f -o default -X '!*.+(htm*|HTM*)' lynx html2ps
+# Multimedia
+complete -f -o default -X '!*.+(jp*g|gif|xpm|png|bmp)' xv gimp
+complete -f -o default -X '!*.+(mp3|MP3)' mpg123 mpg321
+complete -f -o default -X '!*.+(ogg|OGG)' ogg123
+
+
+
+complete -f -o default -X '!*.pl'  perl perl5
+
+
+
+
+
+
+
+#-----------------------------------
+# Process/system related functions:
+#-----------------------------------
+
+function myps() { ps $@ -u $USER -o pid,%cpu,%mem,bsdtime,command ; }  # works
+function pp() { myps f | awk '!/awk/ && $0~var' var=${1:-".*"} ; }  # doesn't work on mac. iilegal option -f
+
+#-----------------------------------
+# File & strings related functions:
+#-----------------------------------
+
+# Find a file with a pattern in name:
+function fn() { find . 2>/dev/null -name '*'$1'*' ; }  # find a file  # works
+# Find a file with pattern $1 in name and Execute $2 on it:
+function fe() { find . 2>/dev/null -name '*'$1'*' -exec $2 {} \; ; }  # find a file and run $2 on it  # works
+
+# Find string in source code
+alias fs="find ./ -type f \( -name \*.c -or -name \*.cpp -or -name \*.h \) 2>/dev/null | xargs grep -a -n --colour"
+# Find string in Text
+alias ft="find . -type f 2>/dev/null | perl -e 'while(<>){s/\n//;if(!-B){print \$_.\"\n\"}}' | xargs grep -a -n --colour"
+# find pattern in a set of filesand highlight them:
+function fstr()
+{
+    OPTIND=1
+    local case=""
+    local usage="fstr: find string in files.
+Usage: fstr [-i] \"pattern\" [\"filename pattern\"] "
+    while getopts :it opt
+    do
+        case "$opt" in
+        i) case="-i " ;;
+        *) echo "$usage"; return;;
+        esac
+    done
+    shift $(( $OPTIND - 1 ))
+    if [ "$#" -lt 1 ]; then
+        echo "$usage"
+        return;
+    fi
+    local SMSO=$(tput smso)
+    local RMSO=$(tput rmso)
+    find . -type f -name "${2:-*}" -print0 |
+    xargs -0 grep -sn ${case} "$1" 2>&- | \
+    sed "s/$1/${SMSO}\0${RMSO}/gI" | more
+}
+# move filenames to lowercase  # not working on mac
+function lowercase()
+{
+    for file ; do
+        filename=${file##*/}
+        case "$filename" in
+            */*) dirname==${file%/*} ;;
+            *) dirname=.;;
+        esac
+        nf=$(echo $filename | tr A-Z a-z)
+        newname="${dirname}/${nf}"
+        if [ "$nf" != "$filename" ]; then
+            mv "$file" "$newname"
+            echo "lowercase: $file --> $newname"
+        else
+            echo "lowercase: $file not changed."
+        fi
+    done
+}
+
+function mk_list()
+{
+    echo
+    echo "Product            |   Full       VR        sbf    symbols"
+    echo "-------------------+-------------------------------------"
+    echo "KeyWest            |    kf        kv        ks        ky"
+    echo "KeyWest_x86        |    kfx       kvx       ksx       kys"
+    echo "KeyWest_Falutline  |    kff       kvf       ksf       kyf"
+    echo "Mearl              |    mf        mv        ms        my"
+    echo "Mearl_x86          |    mfx       mvx       msx       myx"
+    echo "Pearl              |    pf        pv        ps        py"
+    echo "Pearl_x86          |    pfx       pvx       psx       pyx"
+    echo "Onyx               |    of        ov        os        oy"
+    echo
+}
+function mk()
+{
+    PRODUCT=''
+    PRODUCT_CONF=''
+    LANGID='LANGID=0015'
+    CONFIG='TEST_ENGBLD=1'
+    TARGET='build'
+    SUB_PRODUCT=''
+
+    case "${1:0:1}" in
+        k) #KeyWest
+            PRODUCT='PRODUCT=keywest'
+            PRODUCT_CONF='PRODUCT_CONF=p2a_128ram'
+            ;;
+        m) #Mearl
+            PRODUCT='PRODUCT=marco'
+            PRODUCT_CONF='PRODUCT_CONF=p0a_lp_128ram'
+            ;;
+        p) #Pearl
+            PRODUCT='PRODUCT=pearl'
+#            PRODUCT_CONF=p1a_lp_r128_n256
+            ;;
+        o) #Onyx
+            PRODUCT='PRODUCT=pearl'
+            PRODUCT_CONF='SUB_PRODUCT=onyx'
+            ;;
+        *)
+            mk_list
+            return
+    esac
+
+    case "${1:1:1}" in
+        f) #Full
+           TARGET='P=1 build' ;;
+        v) #VR
+           TARGET='P=1 build/vui BUILD_DEPS=0' ;;
+        s) #sbf
+           if [ "${2:0:2}" = "00" ]; then
+               LANGID="LANGID=${2}"
+           fi
+           if [ "${1:2:1}" = "x" ]; then
+               TARGET="$LANGID install.tgz"
+           else
+               TARGET="$LANGID sbf"
+           fi
+           ;;
+        y) #symbols
+           if [ "${2:0:2}" = "00" ]; then
+               LANGID="LANGID=${2}"
+           fi
+           TARGET="$LANGID symbols.tgz"
+           ;;
+        *)
+            mk_list
+            return
+    esac
+
+    case "${1:2:1}" in
+        x) # x86
+            PRODUCT_CONF=x86 ;;
+        f) # Faultline
+            CONFIG='TEST_FL_BLD=1 TEST_ENGBLD=1' ;;
+        "")
+            ;;
+        *)
+            mk_list
+            return
+    esac
+         
+    COMMAND="clearmake $PRODUCT $PRODUCT_CONF $CONFIG $TARGET"
+    printf "\e[33m$COMMAND\e[0m\n"
+    
+    (cd /vobs/linuxjava/platform; /apps/zch68vendor/bin/bsub -I -q zch68-lj "$COMMAND")
+}
+
+function setview()
+{
+    if [ "${1:0:6}" = "$USER" ]; then
+        /usr/atria/bin/cleartool setview $1 ;
+    else
+        VIEWNAME=$(/usr/atria/bin/cleartool lsview | grep $USER | sed -n ${1}p)
+        VIEWNAME=${VIEWNAME##*/}
+        echo "Setview to ${VIEWNAME%%.*}"
+        /usr/atria/bin/cleartool setview ${VIEWNAME%%.*} ;
+    fi
+}
+
+function vd()
+{
+    FILENAME=$(/usr/atria/bin/cleartool ls $1)
+    FILENAME=${FILENAME%% Rule:*}
+    FILENAME=${FILENAME%%CHECKEDOUT from *}
+    FILENAME=${FILENAME%/*}
+    echo -e "diff $RED$1$NC and $RED${FILENAME}/0$NC"
+    vimdiff $1 ${FILENAME}/0
+}
+
+function vdp()
+{
+    FILENAME=$(/usr/atria/bin/cleartool ls $1)
+    FILENAME=${FILENAME%% Rule:*}
+    VERSION=${FILENAME##*/}
+    FILENAME2=${FILENAME%%CHECKEDOUT from *}
+    if [ ${#FILENAME} == ${#FILENAME2} ]; then
+        VERSION=$[$VERSION-1]
+    fi
+    FILENAME=${FILENAME2%/*}
+    echo -e "diff $RED$1$NC and $RED${FILENAME}/$VERSION$NC"
+    vimdiff $1 ${FILENAME}/$VERSION
+}
+#function exit() { export VIEW=NONE ; exit ; }
+
+#-----------------------------------
+# ClearCase related alias and functions:
+#-----------------------------------
+alias dlc="/vobs/linuxjava/platform/tools/bin/clear_dlc -br"
+alias build07="/apps/vendor/bin/bsub -I -q zch07e-lj"
+alias build="/apps/zch68vendor/bin/bsub -I -q zch68-lj"
+alias clt="/usr/atria/bin/cleartool"
+alias mkview="/site/bin/create_view"
+alias rmview="/site/bin/remove_view"
+#alias setview="/usr/atria/bin/cleartool setview"
+alias pwv="/usr/atria/bin/cleartool pwv"
+alias lsview="/usr/atria/bin/cleartool lsview | grep $USER"
+alias ct="/usr/atria/bin/cleartool catcs"
+alias ce="/usr/atria/bin/cleartool edcs"
+alias cl="/usr/atria/bin/cleartool ls"
+alias cs="/usr/atria/bin/cleartool setview"
+alias lv="lsview"
+alias sv="setview"
+
+#alias ci="/usr/atria/bin/cleartool lsco -r -cview -s | xargs /usr/atria/bin/cleartool ci -nc"
+alias lsco="clt lsco -cview -avobs 2>/dev/null"
+alias unco="/usr/atria/bin/cleartool lsco -avobs -cview -s 2>/dev/null | xargs /usr/atria/bin/cleartool unco -rm"
+alias ciall="clt lsco -cview -avobs -s 2>/dev/null | xargs cleartool ci -nc"
+
+
+alias cdvr="cd /vobs/linuxjava/vui/vui/vr"
+alias cdlj="cd /vobs/linuxjava/platform"
+alias cdfr="cd /vobs/linuxjava/vui/vui/vr/lib/vuifrm/"
+alias cdfs="cd /vobs/linuxjava/vui/vui/vr/lib/vuifrm/src"
+alias cdfi="cd /vobs/linuxjava/vui/vui/vr/lib/vuifrm/include"
+alias cdvp="cd /vobs/linuxjava/vui/vui/vr/lib/vuifrm/plugins/voper"
+alias cdsi="cd /vobs/linuxjava/vui/vui/vr/lib/vuifrm/share/include"
+alias cdee="cd /vobs/linuxjava/vui/vui/vr/lib/vuifrm/export/engine"
+alias cdea="cd /vobs/linuxjava/vui/vui/vr/lib/vuifrm/export/app"
+
+alias cdiui="cd /vobs/IUI_Platform"
+alias cdimf="cd /vobs/IUI_Platform/newton/IMFSo"
+alias cdnt="cd /vobs/IUI_Platform/newton/apps"
+alias mkimf="(cd /vobs/IUI_Platform/newton/apps/ExampleApp;sh build.sh;make package_int ASRIMPL=LJ;cd ..;tar cvzf package_int.tar.gz package_int; mv -f package_int.tar.gz ~/share/)"
+
+alias mkkwvr="(cd /vobs/linuxjava/platform;build 'clearmake PRODUCT=keywest TEST_ENGBLD=1 build/vui BUILD_DEPS=0')"
+alias mkkw="(cd /vobs/linuxjava/platform;build 'clearmake PRODUCT=keywest TEST_ENGBLD=1 build')"
+alias mkkwsbf="(cd /vobs/linuxjava/platform;build 'clearmake PRODUCT=keywest PRODUCT_CONF=p2a_128ram TEST_ENGBLD=1 LANGID=0053 sbf')"
+
+alias mkkwvrx86="(cd /vobs/linuxjava/platform;build 'clearmake PRODUCT=keywest PRODUCT_CONF=x86 TEST_ENGBLD=1 build/vui BUILD_DEPS=0')"
+alias mkkwx86="(cd /vobs/linuxjava/platform;build 'clearmake PRODUCT=keywest PRODUCT_CONF=x86 TEST_ENGBLD=1 build')"
+alias mkkwsbfx86="(cd /vobs/linuxjava/platform;build 'clearmake PRODUCT=keywest PRODUCT_CONF=x86 TEST_ENGBLD=1 LANGID=0053 install.tgz')"
+
+alias mkvr="(cd /vobs/linuxjava/platform;clearmake PRODUCT=kassos TEST_ENGBLD=1 build/vui BUILD_DEPS=0)"
+alias mkks="(cd /vobs/linuxjava/platform;clearmake PRODUCT=kassos TEST_ENGBLD=1 build)"
+alias mksbf="(cd /vobs/linuxjava/platform;clearmake PRODUCT=kassos TEST_ENGBLD=1 LANGID=0053 PRODUCT_CONF=p1a_lp_256 sbf)"
+alias cpvr="/bin/cp -f /vobs/linuxjava/platform/build/vui/usr/SYSqtapp/vui/vr ~/build/bin/vr; /bin/cp -f /vobs/linuxjava/platform/build/vui/usr/lib/ezx/lib/libezxvr.so.1.0.0 ~/build/lib; /bin/cp -f /vobs/linuxjava/platform/build/vui/usr/lib/ezx/lib/libezxvuifrm.so.1.0.0 ~/build/lib"
+alias cplib="/bin/cp -f /vobs/linuxjava/platform/build/vui/usr/lib/ezx/lib/libezxvr.so.1.0.0 ~/build/lib; /bin/cp -f /vobs/linuxjava/platform/build/vui/usr/lib/ezx/lib/libezxvuifrm.so.1.0.0 ~/build/lib"
+alias cpsbf="/bin/cp -f /vobs/linuxjava/platform/*.sbf ~/build"
+alias mvsbf="/bin/mv -f /vobs/linuxjava/platform/*.sbf ~/build"
+alias mvtgz="/bin/cp -f /vobs/linuxjava/platform/install.tgz /download/slj/bin/smobee/smobee/img/installx.tgz"
+
+alias kwc="/vobs/klocwork/bin/kloc_analysis.pl -m -n LJ72AP -v linuxjava -e 24 -w 9 -c /vobs/linuxjava/platform/build/vui/usr/lib/ezx/lib/libezxvuifrm.so.1.0.0 /vobs/linuxjava/platform/build/vui/usr/lib/ezx/lib/libezxvr.so.1.0.0 /vobs/linuxjava/platform/build/vui/usr/SYSqtapp/vui/vr -b"
+alias kwi="/vobs/klocwork/bin/mkkw -n LJ72AP /vobs/linuxjava/platform/build/vui/usr/lib/ezx/lib/libezxvuifrm.so.1.0.0 /vobs/linuxjava/platform/build/vui/usr/lib/ezx/lib/libezxvr.so.1.0.0 /vobs/linuxjava/platform/build/vui/usr/SYSqtapp/vui/vr -b"
+
+alias ezxsmb="smbclient //192.168.1.2/system"
+alias nfs="/vobs/ezx_tools/usb/nfs.sh"
+
+alias ftph="ftp 10.193.8.211"
+
+alias shutdown="sudo /sbin/shutdown -r now"
+
+# Find a branch
+function fb()
+{ clt find $PWD -version "version(.../$1/LATEST)" -print ; }
+function fl()
+{ clt find $PWD -version "version($1)" -print ; }
+
+# Find merge from version and print
+function fm()
+{ clt findmerge $PWD -fver .../$1/LATEST -print ; }
+function fml()
+{ clt findmerge $PWD -fver $1 -print ; }
+# Find merge from version and do merge
+function fmm()
+{ clt findmerge $PWD -fver .../$1/LATEST -merge -nc; }
+function fmml()
+{ clt findmerge $PWD -fver $1 -merge -nc; }
+
+# Make lable for branch
+function mklb()
+{ clt find . -branch "brtype($1)" -exec 'echo $CLEARCASE_PN' |xargs -i cleartool mklabel -replace $2 {} ; }
+
+

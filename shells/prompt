@@ -71,8 +71,10 @@ function power_prompt()
     host_load
     set_xtitle
     if [ "$UID" -eq 0 ]; then
+        #PS1="\[${HOST_COLOR}\]\t\[${NC}\] \[${blue}\]$(parse_git_branch)\[${NC}\] \[${purple}\]\w\[${NC}\]> "
         PS1="\[${HOST_COLOR}\]\t\[${NC}\] \[${blue}\]$(parse_git_branch)\[${NC}\] \[${purple}\]\w\[${NC}\]> "
     else
+        #PS1="\[${HOST_COLOR}\]\t\[${NC}\] \[${blue}\]$(parse_git_branch)\[${NC}\] \[${yellow}\]\w\[${NC}\]> "
         PS1="\[${HOST_COLOR}\]\t\[${NC}\] \[${blue}\]$(parse_git_branch)\[${NC}\] \[${yellow}\]\w\[${NC}\]> "
     fi
 }

@@ -3,6 +3,7 @@
 #----------------
 function openport()
 {
+    echo "Open port $1"
     sudo firewall-cmd --zone=public --add-port=$1/tcp --permanent ;
     sudo systemctl restart firewalld.service ;
     sudo firewall-cmd --reload ;

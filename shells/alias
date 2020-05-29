@@ -49,7 +49,7 @@ fi
 
 # This one is to take care of make
 # Give me a nice, distinguishable make output
-alias make='clear && make'
+#alias make='clear && make'
 alias m='make'
 
 # Some more, to avoid mistakes

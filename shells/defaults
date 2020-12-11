@@ -78,6 +78,8 @@ shopt -s nocaseglob
 export PATH=$PATH:/usr/games/
 
 
+source /opt/rh/devtoolset-7/enable
+
 
 
 # Bash settings
@@ -103,4 +105,5 @@ shopt -s extglob    # necessary for programmable completion
 
 # Disable options:
 shopt -u mailwarn
+
 unset MAILCHECK       # I don't want my shell to warn me of incoming mail

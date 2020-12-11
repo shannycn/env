@@ -5,6 +5,12 @@ alias gr="go run main.go"
 
 #alias iptb="/sbin/iptables -I INPUT -p tcp --dport 8088 -j ACCEPT"
 
+alias addport="firewall-cmd --zone=public --add-port=8080/tcp --permanent"
+alias rmport="firewall-cmd --zone=public --remove-port=8080/tcp --permanent"
+alias reloadport="firewall-cmd --reload"
+alias listport="firewall-cmd --zone=public --list-ports"
+alias listenport="netstat -lnpt"
+
 stty stop undef
 stty start undef
 
@@ -151,3 +157,9 @@ alias moer='more'
 alias moew='more'
 alias kk='ll'
 
+alias rebuildtest='make build-linux;sudo docker stop venus-test;sudo docker rm venus-test;sudo docker rmi venus:test;make docker-test;sudo docker logs -f venus-test'
+alias rebuildprod='make build-linux;sudo docker stop venus-prod;sudo docker rm venus-prod;sudo docker rmi venus:prod;make docker-prod;sudo docker logs -f venus-prod'
+alias logstest='sudo docker logs -f --tail 1000 venus-test'
+alias logsprod='sudo docker logs -f --tail 1000 venus-prod'
+alias updatetest='make build-linux;sudo docker stop venus-test;sudo docker cp ./unix-venus venus-test:/venus;sudo docker start venus-test;sudo docker logs -f venus-test'
+alias updateprod='make build-linux;sudo docker stop venus-prod;sudo docker cp ./unix-venus venus-prod:/venus;sudo docker start venus-prod;sudo docker logs -f venus-prod'
